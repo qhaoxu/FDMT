@@ -1,13 +1,13 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 import numpy as np
 from time import time
 
-verbose = False
+verbose = True
 
-#fmin, fmax, nchan, maxDT = 400.00, 800.00, 4096, 8192  # Full band
-fmin, fmax, nchan, maxDT = 593.75, 606.25, 128, 1024 # Test band
+fmin, fmax, nchan, maxDT = 400.00, 800.00, 1024, 1024  # Full band
+# fmin, fmax, nchan, maxDT = 593.75, 606.25, 128, 1024 # Test band
 fs,df = np.linspace(fmin,fmax,nchan,endpoint=False,retstep=True)
 
 def subDT(f,dF=df):
@@ -53,22 +53,22 @@ def fdmt(I,retDMT=False):
     fdmt_initialize(I)
     
     t2 = time()
-    for i in xrange(1,int(np.log2(nchan))+1):
+    for i in range(1,int(np.log2(nchan))+1):
         src, dest  = (A, B) if (i % 2 == 1) else (B, A)
         fdmt_iteration(src,dest,i)
     
     if verbose: 
         t3 = time()
-        print "Initializing time:  %.2f s" % (t2-t1)
-        print "Iterating time:  %.2f s" % (t3-t2)
-        print "Total time: %.2f s" % (t3-t1)
+        print("Initializing time:  %.2f s" % (t2-t1))
+        print("Iterating time:  %.2f s" % (t3-t2))
+        print("Total time: %.2f s" % (t3-t1))
 
     DMT = dest[:maxDT]
     if retDMT: return DMT
-    noiseRMS  = np.array([DMT[i,i:].std()  for i in xrange(maxDT)])
-    noiseMean = np.array([DMT[i,i:].mean() for i in xrange(maxDT)])
-    sigmi = (rawDMT.T - noiseMean)/noiseRMS
-    if verbose: print "Maximum sigma value: %.3f" % sigmi.max()
+    noiseRMS  = np.array([DMT[i,i:].std()  for i in range(maxDT)])
+    noiseMean = np.array([DMT[i,i:].mean() for i in range(maxDT)])
+    sigmi = (DMT.T - noiseMean)/noiseRMS
+    if verbose: print("Maximum sigma value: %.3f" % sigmi.max())
     return sigmi.max()
 
 
@@ -76,7 +76,7 @@ def fdmt_initialize(I):
     A[Q[0],:] = I
     chDTs     = subDT(fs)
     T         = I.shape[1]
-    commonDTs = [T for _ in xrange(1,chDTs.min())] 
+    commonDTs = [T for _ in range(1,chDTs.min())] 
     DTsteps   = list(np.where(chDTs[:-1]-chDTs[1:] != 0)[0])
     DTplan    = commonDTs + DTsteps[::-1]
     for i,t in enumerate(DTplan,1):
@@ -91,7 +91,7 @@ def fdmt_iteration(src,dest,i):
     f_starts = fs[::2**i]
     f_ends   = f_starts + dF
     f_mids   = fs[2**(i-1)::2**i]
-    for i_F in xrange(nchan/2**i):
+    for i_F in range(nchan//2**i):
         f0  = f_starts[i_F]
         f1  = f_mids[i_F]
         f2  = f_ends[i_F]
@@ -99,7 +99,7 @@ def fdmt_iteration(src,dest,i):
         C   = (f1**-2-f0**-2)/(f2**-2-f0**-2)
         C01   = ((f1-cor)**-2-f0**-2)/(f2**-2-f0**-2)
         C12   = ((f1+cor)**-2-f0**-2)/(f2**-2-f0**-2)
-        for i_dT in xrange(subDT(f0,dF)):
+        for i_dT in range(subDT(f0,dF)):
             dT_mid01 = round(i_dT*C01)
             dT_mid12 = round(i_dT*C12)
             dT_rest = i_dT - dT_mid12
@@ -119,12 +119,12 @@ def recursive_fdmt(I,depth=0,curMax=0):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) is not 3: 
-        print "Usage: ./fdmt.py binary_image_file datatype"
+    if len(sys.argv) != 3: 
+        print("Usage: ./fdmt.py binary_image_file datatype")
     else:
         fn = sys.argv[1]
         dt = np.dtype(sys.argv[2])
         I  = np.fromfile(fn,dt)
         assert I.shape[0]%nchan == 0, 'Input shape inconsistent with decided nchan (%i)' % nchan 
-        I  = I.reshape(nchan,I.shape[0]/nchan)
-        print "Maximum sigma: %.2f" % recursive_fdmt(I)
+        I  = I.reshape(-1, nchan).T
+        # print("Maximum sigma: %.2f" % recursive_fdmt(I))

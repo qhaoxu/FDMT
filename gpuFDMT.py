@@ -42,7 +42,7 @@ class ExecutionPlan:
         cuda.Context.synchronize()
         read_results()
         cuda.stop_profiler()
-        print "Time for DM tranform, transpose, sigma calculate, get max sigma: %.3f s" % (time()-timestamp)
+        print("Time for DM tranform, transpose, sigma calculate, get max sigma: %.3f s" % (time()-timestamp))
 
 def fdmt(Image):
     global I
@@ -74,10 +74,10 @@ def generate_plan():
     plan = ExecutionPlan()
     plan.funcs.append(cuda.memcpy_htod)
     plan.args.append([B,I[:ch_gulp]])
-    for i in xrange(nchan/2):
+    for i in range(nchan/2):
         add_chs(i)
         async = (i+1)%(ch_gulp/2) == 0 and i < nchan/2 - 2
-        for j in xrange(1,int(np.log2(nchan))):
+        for j in range(1,int(np.log2(nchan))):
             if (i+1)%(2**j) == 0: 
                 join(fs[2*i+1]+df,j,async)
         if async: load_chs(2*i+2)
@@ -147,7 +147,7 @@ def load_chs(f0_i):
 def read_results():
     out = np.empty(maxDT,np.float32)
     cuda.memcpy_dtoh(out,A)
-    print "Max sigma:", out.max()
+    print("Max sigma:", out.max())
     
     # if dedispersed results are desired...
     #out = np.empty((T-maxDT,maxDT),np.float32)
@@ -314,5 +314,5 @@ block3 = (tpb,1,1)
 if __name__ == '__main__':
     I = np.random.random_integers(0,2**16-1,(nchan,T)).astype(np.float32)
     #I = np.ones((nchan,T),np.float32)
-    print "Made array..."
+    print("Made array...")
     fdmt(I)
