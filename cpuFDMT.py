@@ -4,9 +4,9 @@ import sys
 import numpy as np
 from time import time
 
-verbose = True
+verbose = False
 
-fmin, fmax, nchan, maxDT = 400.00, 800.00, 1024, 1024  # Full band
+fmin, fmax, nchan, maxDT = 400.00, 800.00, 1024, 2048  # Full band
 # fmin, fmax, nchan, maxDT = 593.75, 606.25, 128, 1024 # Test band
 fs,df = np.linspace(fmin,fmax,nchan,endpoint=False,retstep=True)
 
@@ -82,7 +82,8 @@ def fdmt_initialize(I):
     for i,t in enumerate(DTplan,1):
         A[Q[0][:t]+i,i:] = A[Q[0][:t]+i-1,i:]+I[:t,:-i]
     for i,t in enumerate(DTplan,1):
-        A[Q[0][:t]+i,i:] /= np.sqrt(float(i))
+        # A[Q[0][:t]+i,i:] /= int(i+1)
+        A[Q[0][:t]+i,i:] /= int(i+1)
     
 
 def fdmt_iteration(src,dest,i):
@@ -127,4 +128,7 @@ if __name__ == '__main__':
         I  = np.fromfile(fn,dt)
         assert I.shape[0]%nchan == 0, 'Input shape inconsistent with decided nchan (%i)' % nchan 
         I  = I.reshape(-1, nchan).T
+        # print(I.shape)
         # print("Maximum sigma: %.2f" % recursive_fdmt(I))
+        dmt = fdmt(I, retDMT=True)
+        # print('data shape', I.shape, '\nDMT shape', dmt.shape)
