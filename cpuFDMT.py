@@ -6,9 +6,12 @@ from time import time
 
 verbose = False
 
-fmin, fmax, nchan, maxDT = 400.00, 800.00, 1024, 2048  # Full band
-# fmin, fmax, nchan, maxDT = 593.75, 606.25, 128, 1024 # Test band
-fs,df = np.linspace(fmin,fmax,nchan,endpoint=False,retstep=True)
+fmin = 400.1953125 # frequency of the bottom end of the CHIME band
+fmax = 800.1953125 # frequency at the top end of the CHIME band
+nchan = 1024 # Default setting
+maxDT = 2048 # Default setting
+df = (fmax - fmin) / nchan
+fs = np.linspace(fmin+df/2, fmax-df/2, nchan, endpoint=True)
 
 def subDT(f,dF=df):
     "Get needed DT of subband to yield maxDT over entire band"
