@@ -48,8 +48,8 @@ class FDMT:
 
 
     def buildAB(self, numCols, dtype=np.uint32):
-        numRowsA = (subDT(self.fs)).sum()
-        numRowsB = (subDT(self.fs[::2], self.fs[2] - self.fs[0])).sum()
+        numRowsA = (self.subDT(self.fs)).sum()
+        numRowsB = (self.subDT(self.fs[::2], self.fs[2] - self.fs[0])).sum()
         self.A = np.zeros([numRowsA, numCols], dtype)
         self.B = np.zeros([numRowsB, numCols], dtype)
 
@@ -57,14 +57,14 @@ class FDMT:
     def buildQ(self):
         self.Q = []
         for i in range(int(np.log2(self.nchan)) + 1):
-            needed = subDT(self.fs[:: 2**i], self.df * 2**i)
+            needed = self.subDT(self.fs[:: 2**i], self.df * 2**i)
             self.Q.append(np.cumsum(needed) - needed)
 
 
     def prep(self, cols, dtype=np.uint32):
         "Prepares necessary matrices for FDMT"
-        buildAB(cols, dtype=dtype)
-        buildQ()
+        self.buildAB(cols, dtype=dtype)
+        self.buildQ()
 
 
     def fdmt(self, I, retDMT=False, verbose=False):
@@ -73,15 +73,15 @@ class FDMT:
         if I.dtype.itemsize < 4:
             I = I.astype(np.uint32)
         if self.A is None or self.A.shape[1] != I.shape[1] or self.A.dtype != I.dtype or True:
-            prep(I.shape[1], dtype=I.dtype)
+            self.prep(I.shape[1], dtype=I.dtype)
 
         t1 = time()
-        fdmt_initialize(I)
+        self.fdmt_initialize(I)
 
         t2 = time()
         for i in range(1, int(np.log2(self.nchan)) + 1):
             src, dest = (self.A, self.B) if (i % 2 == 1) else (self.B, self.A)
-            fdmt_iteration(src, dest, i)
+            self.fdmt_iteration(src, dest, i)
 
         if verbose:
             t3 = time()
@@ -102,7 +102,7 @@ class FDMT:
 
     def fdmt_initialize(self, I):
         self.A[self.Q[0], :] = I
-        chDTs = subDT(self.fs)
+        chDTs = self.subDT(self.fs)
         T = I.shape[1]
         commonDTs = [T for _ in range(1, chDTs.min())]
         DTsteps = list(np.where(chDTs[:-1] - chDTs[1:] != 0)[0])
@@ -128,7 +128,7 @@ class FDMT:
             C = (f1**-2 - f0**-2) / (f2**-2 - f0**-2)
             C01 = ((f1 - cor) ** -2 - f0**-2) / (f2**-2 - f0**-2)
             C12 = ((f1 + cor) ** -2 - f0**-2) / (f2**-2 - f0**-2)
-            for i_dT in range(subDT(f0, dF)):
+            for i_dT in range(self.subDT(f0, dF)):
                 dT_mid01 = round(i_dT * C01)
                 dT_mid12 = round(i_dT * C12)
                 dT_rest = i_dT - dT_mid12
@@ -154,4 +154,4 @@ class FDMT:
                 if (I.shape[1] % 2 == 0)
                 else I[:, :-1:2] + I[:, 1::2]
             )
-            return recursive_fdmt(I2, depth - 1, curMax)
+            return self.recursive_fdmt(I2, depth - 1, curMax)
