@@ -19,8 +19,7 @@ class FDMT:
 
 
     def __attrs_post_init__(self):
-        self.df = (self.fmax - self.fmin) / self.nchan
-        self.fs = np.linspace(self.fmin+self.df/2, self.fmax-self.df/2, self.nchan, endpoint=True)
+        self.fs, self.df = fs,df = np.linspace(self.fmin, self.fmax, self.nchan, endpoint=False,retstep=True)
 
 
     def subDT(self, f, dF=self.df):
