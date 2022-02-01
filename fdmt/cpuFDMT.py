@@ -46,7 +46,7 @@ class FDMT:
 
     def prep(self, cols, dtype=np.uint32):
         "Prepares necessary matrices for FDMT"
-        buildAB(cols, dtype)
+        buildAB(cols, dtype=dtype)
         buildQ()
 
 
@@ -56,7 +56,7 @@ class FDMT:
         if I.dtype.itemsize < 4:
             I = I.astype(np.uint32)
         if self.A is None or self.A.shape[1] != I.shape[1] or self.A.dtype != I.dtype or True:
-            prep(I.shape[1], I.dtype)
+            prep(I.shape[1], dtype=I.dtype)
 
         t1 = time()
         fdmt_initialize(I)
@@ -120,6 +120,10 @@ class FDMT:
                     self.Q[i - 1][2 * i_F + 1] + dT_rest, : T - dT_mid12
                 ]
 
+    def reset_ABQ(self):
+        self.A = None
+        self.B = None
+        self.Q = []
 
     def recursive_fdmt(self, I, depth=0, curMax=0):
         """Performs FDMT, downsamples and repeats recursively, returning max sigma
