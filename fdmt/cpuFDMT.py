@@ -7,15 +7,31 @@ from attr import attrs, attrib, cmp_using
 
 @attrs
 class FDMT:
-    fmin: float = attrib(default=400.1953125, help="Frequency of the lowest edge of the band, in MHz")
-    fmax: float = attrib(default=800.1953125, help="Frequency of the highest edge of the band, in MHz")
-    nchan: int = attrib(default=1024, help="Number of frequency channels")
-    maxDT: int = attrib(default=2048, help="Number of time samples corresponding to the maximum delay between the top and bottom of the band (defines the maximum DM of the search)")
-    A: np.ndarray = attrib(default=None, eq=cmp_using(eq=np.array_equal), help="A and B hold the states of successive iterations")
-    B: np.ndarray = attrib(default=None, eq=cmp_using(eq=np.array_equal), help="A and B hold the states of successive iterations")
+    '''
+    Collection of attributes and helper arrays necessary for dispersion using
+    FDMT.
+
+    Parameters
+    ---------
+    fmin: float
+        Frequency of the lowest edge of the band, in MHz
+    fmax: float
+        Frequency of the highest edge of the band, in MHz
+    nchan: int
+        Number of frequency channels
+    maxDT: int
+        Number of time samples corresponding to the maximum delay between the
+        top and bottom of the band (defines the maximum DM of the search)
+    '''
+    fmin: float = attrib(default=400.1953125)
+    fmax: float = attrib(default=800.1953125)
+    nchan: int = attrib(default=1024)
+    maxDT: int = attrib(default=2048)
+    A: np.ndarray = attrib(default=None, eq=cmp_using(eq=np.array_equal))
+    B: np.ndarray = attrib(default=None, eq=cmp_using(eq=np.array_equal))
     df: float = attrib(init=False)
     fs: np.ndarray = attrib(init=False, eq=cmp_using(eq=np.array_equal))
-    Q: list = attrib(init=False, eq=cmp_using(eq=np.array_equal), help="Q organizes memory locations of subtransforms for each iteration")
+    Q: list = attrib(init=False, eq=cmp_using(eq=np.array_equal))
 
 
     def __attrs_post_init__(self):
