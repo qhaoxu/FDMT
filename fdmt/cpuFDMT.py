@@ -48,7 +48,7 @@ class FDMT:
 
 
     def buildAB(self, numCols, dtype=np.uint32):
-        numRowsA = (subDT(self.fs)).sum()
+        numRowsA = (subDT(self.fs), self.df).sum()
         numRowsB = (subDT(self.fs[::2], self.fs[2] - self.fs[0])).sum()
         self.A = np.zeros([numRowsA, numCols], dtype)
         self.B = np.zeros([numRowsB, numCols], dtype)
@@ -102,7 +102,7 @@ class FDMT:
 
     def fdmt_initialize(self, I):
         self.A[self.Q[0], :] = I
-        chDTs = subDT(self.fs)
+        chDTs = subDT(self.fs, self.df)
         T = I.shape[1]
         commonDTs = [T for _ in range(1, chDTs.min())]
         DTsteps = list(np.where(chDTs[:-1] - chDTs[1:] != 0)[0])
