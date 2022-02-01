@@ -38,8 +38,10 @@ class FDMT:
         self.fs, self.df = fs,df = np.linspace(self.fmin, self.fmax, self.nchan, endpoint=False,retstep=True)
 
 
-    def subDT(self, f, dF=self.df):
+    def subDT(self, f, dF=None):
         "Get needed DT of subband to yield maxDT over entire band"
+        if dF is None:
+            dF = self.df
         loc = f**-2 - (f + dF) ** -2
         glo = self.fmin**-2 - self.fmax**-2
         return np.ceil((self.maxDT - 1) * loc / glo).astype(int) + 1
