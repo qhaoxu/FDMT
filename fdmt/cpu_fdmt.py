@@ -72,6 +72,7 @@ class FDMT:
         <Some info on requirements of I"""
         if I.dtype.itemsize < 4:
             I = I.astype(np.uint32)
+        I = np.concatenate((I, np.zeros((self.nchan, self.maxDT), dtype=I.dtype)), axis=1)
         if self.A is None or self.A.shape[1] != I.shape[1] or self.A.dtype != I.dtype or True:
             self.prep(I.shape[1], dtype=I.dtype)
 
