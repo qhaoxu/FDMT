@@ -67,13 +67,17 @@ class FDMT:
         self.buildQ()
 
 
-    def fdmt(self, I, retDMT=False, verbose=False):
+    def fdmt(self, I, retDMT=False, verbose=False, padding=False):
         """Computes DM Transform. If retDMT returns transform, else returns max sigma
         I should have shape (nchan, nsamp) where nsamp is the number of time samples
-        IF retDM the returned array will have shape (maxDT, nsamp)"""
+        IF retDM the returned array will have one of the following shapes:
+            - if padding is True: (maxDT, nsamp + maxDT)
+            - if padding is False (default): (maxDT, nsamp)"""
+
         if I.dtype.itemsize < 4:
             I = I.astype(np.uint32)
-        I = np.concatenate((I, np.zeros((self.nchan, self.maxDT), dtype=I.dtype)), axis=1)
+        if padding:
+            I = np.concatenate((I, np.zeros((self.nchan, self.maxDT), dtype=I.dtype)), axis=1)
         if self.A is None or self.A.shape[1] != I.shape[1] or self.A.dtype != I.dtype or True:
             self.prep(I.shape[1], dtype=I.dtype)
 
