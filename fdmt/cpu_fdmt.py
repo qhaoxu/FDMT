@@ -69,7 +69,8 @@ class FDMT:
 
     def fdmt(self, I, retDMT=False, verbose=False):
         """Computes DM Transform. If retDMT returns transform, else returns max sigma
-        <Some info on requirements of I"""
+        I should have shape (nchan, nsamp) where nsamp is the number of time samples
+        IF retDM the returned array will have shape (maxDT, nsamp)"""
         if I.dtype.itemsize < 4:
             I = I.astype(np.uint32)
         I = np.concatenate((I, np.zeros((self.nchan, self.maxDT), dtype=I.dtype)), axis=1)
@@ -145,7 +146,7 @@ class FDMT:
 
     def recursive_fdmt(self, I, depth=0, curMax=0):
         """Performs FDMT, downsamples and repeats recursively, returning max sigma
-        <Some info on requirements for I>"""
+        I should have shape (nchan, nsamp) where nsamp is the number of time samples"""
         curMax = max(curMax, fdmt(I))
         if depth <= 0:
             return curMax
