@@ -67,7 +67,7 @@ class FDMT:
         self.buildQ()
 
 
-    def fdmt(self, I, retDMT=False, verbose=False, padding=False):
+    def fdmt(self, I, retDMT=True, verbose=False, padding=False):
         """Computes DM Transform. If retDMT returns transform, else returns max sigma
         I should have shape (nchan, nsamp) where nsamp is the number of time samples
         IF retDM the returned array will have one of the following shapes:
