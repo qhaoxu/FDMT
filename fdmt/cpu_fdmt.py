@@ -69,11 +69,44 @@ class FDMT:
 
     def fdmt(self, I, retDMT=False, verbose=False, padding=False,
              frontpadding=True):
-        """Computes DM Transform. If retDMT returns transform, else returns max sigma
-        I should have shape (nchan, nsamp) where nsamp is the number of time samples
-        IF retDM the returned array will have one of the following shapes:
-            - if padding is True: (maxDT, nsamp + maxDT)
-            - if padding is False (default): (maxDT, nsamp)"""
+        """Computes DM Transform. If retDMT returns transform, else returns max
+        sigma.
+        
+        Parameters
+        ==========
+        I: np.ndarray
+            The array of spectra to be dedispersed. Must have shape (nchan, nsamp)
+            where nchan is the number of frequency channels and nsamp is the number
+            of time samples.
+        verbose: bool
+            Whether to print info to stdout.
+        padding: bool
+            Whether to return additional, incompletely integrated time samples
+            at the end of the dedispersed time series.
+        frontpadding: bool
+            Whether to return additional, incompletely integrated time samples
+            at the beginning of the dedispersed time series.
+        retDMT: bool
+            Whether to return the DM transform instead of the SNRs.
+
+        Returns
+        =======
+        dedisp: np.ndarray
+            An array of dedispersed time series. Has shape
+            (maxDT, nsamp_dedisp), where nsamp_dedisp is given as follows:
+                - if padding and frontpadding:
+                    nsamp_dedisp = nsamp + maxDT
+                - if padding and not frontpadding:
+                    nsamp_dedisp = nsamp
+                - if not padding and frontpadding:
+                    nsamp_dedisp = nsamp
+                - if not padding and not frontpadding:
+                    nsamp_dedisp = nsamp - maxDT
+            Only returned if retDMT is True.
+        sigmi: float
+            The SNR of the most prominent feature in the DMT.
+            Only returned if retDMT is False.
+        """
 
         if I.dtype.itemsize < 4:
             I = I.astype(np.uint32)
