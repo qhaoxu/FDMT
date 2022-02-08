@@ -67,7 +67,8 @@ class FDMT:
         self.buildQ()
 
 
-    def fdmt(self, I, retDMT=False, verbose=False, padding=False):
+    def fdmt(self, I, retDMT=False, verbose=False, padding=False,
+             frontpadding=True):
         """Computes DM Transform. If retDMT returns transform, else returns max sigma
         I should have shape (nchan, nsamp) where nsamp is the number of time samples
         IF retDM the returned array will have one of the following shapes:
@@ -96,8 +97,10 @@ class FDMT:
             print("Total time: %.2f s" % (t3 - t1))
 
         DMT = dest[:self.maxDT]
-        if retDMT:
+        if retDMT and frontpadding:
             return DMT
+        elif retDMT:
+            return DMT[:, self.maxDT:]
         noiseRMS = np.array([DMT[i, i:].std() for i in range(self.maxDT)])
         noiseMean = np.array([DMT[i, i:].mean() for i in range(self.maxDT)])
         sigmi = (DMT.T - noiseMean) / noiseRMS
