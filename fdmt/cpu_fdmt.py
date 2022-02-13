@@ -93,7 +93,7 @@ class FDMT:
         =======
         dedisp: np.ndarray
             An array of dedispersed time series. Has shape
-            (maxDT, nsamp_dedisp), where nsamp_dedisp is given as follows:
+            (n_dms, nsamp_dedisp), where nsamp_dedisp is given as follows:
                 - if padding and frontpadding:
                     nsamp_dedisp = nsamp + maxDT
                 - if padding and not frontpadding:
