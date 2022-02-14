@@ -110,8 +110,19 @@ class FDMT:
 
         if I.dtype.itemsize < 4:
             I = I.astype(np.uint32)
+
+        # Concatenate some zero padding arrays (but there may be zero such
+        # arrays)
+        concat_tuple = [I]
         if padding:
-            I = np.concatenate((I, np.zeros((self.nchan, self.maxDT), dtype=I.dtype)), axis=1)
+            concat_tuple.append(np.zeros((self.nchan, self.maxDT), dtype=I.dtype))
+        if frontpadding:
+            # We need to add maxDT time samples to the front of I when
+            # frontpadding is desired, due to edge-related effects
+            concat_tuple.insert(0, np.zeros((self.nchan, self.maxDT), dtype=I.dtype))
+
+        I = np.concatenate(concat_tuple, axis=1)
+
         if self.A is None or self.A.shape[1] != I.shape[1] or self.A.dtype != I.dtype or True:
             self.prep(I.shape[1], dtype=I.dtype)
 
@@ -130,9 +141,11 @@ class FDMT:
             print("Total time: %.2f s" % (t3 - t1))
 
         DMT = dest[:self.maxDT]
-        if retDMT and frontpadding:
-            return DMT
-        elif retDMT:
+
+        if retDMT:
+            # We need to cut off the first maxDT samples either way
+            # because now frontpadding works by inserting maxDT samples' worth
+            # of zeros at the front of I
             return DMT[:, self.maxDT:]
         noiseRMS = np.array([DMT[i, i:].std() for i in range(self.maxDT)])
         noiseMean = np.array([DMT[i, i:].mean() for i in range(self.maxDT)])
