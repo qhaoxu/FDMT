@@ -101,5 +101,16 @@ if __name__ == '__main__':
     out = fdmt.fdmt(data.T, retDMT=True, verbose=args.verbose,
                     padding=args.padding, frontpadding=args.front_padding)
 
-    np.savez(args.outfile, out)
+    outfiletype = args.outfile.rsplit('.', maxsplit=1)
+    if outfiletype = 'npy':
+        np.save(args.outfile, out)
+    elif outfiletype = 'npz':
+        np.savez(args.outfile, out)
+    elif outfiletype = 'dat':
+        np.tofile(args.outfile, out)
+    else:
+        import sys
+        print('Warning: did not recognize output file type; saving as npz',
+              out=sys.err)
+        np.savez(args.outfile + '.npz', out)
 
