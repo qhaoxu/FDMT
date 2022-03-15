@@ -1,3 +1,67 @@
+'''Runs FDMT on filterbank data, yielding output in the format of the user's
+choice.'''
+
+
+def write_inffile(basename, dm, **infdict):
+    '''Writes a presto .inf file with prefix basename.'''
+    inf_template = (
+""" Data file name without suffix          =  {}
+ Telescope used                         =  {}
+ Instrument used                        =  {}
+ Object being observed                  =  {}
+ J2000 Right Ascension (hh:mm:ss.ssss)  =  {}
+ J2000 Declination     (dd:mm:ss.ssss)  =  {}
+ Data observed by                       =  UNKNOWN
+ Epoch of observation (MJD)             =  {:5.15f}
+ Barycentered?           (1=yes, 0=no)  =  {}
+ Number of bins in the time series      =  {}
+ Width of each time series bin (sec)    =  {:.15g}
+ Any breaks in the data? (1 yes, 0 no)  =  0
+ Orbit removed?          (1=yes, 0=no)  =  {}
+ Dispersion measure (cm-3 pc)           =  {:f}
+ Central freq of low channel (Mhz)      =  {:f}
+ Total bandwidth (Mhz)                  =  {:f}
+ Number of channels                     =  {}
+ Channel bandwidth (Mhz)                =  {}
+ Data analyzed by                       =  {}
+ Any additional notes:
+     fdmt
+""")
+
+    filename = f"{basename}_DM{dm:.2f}.inf"
+    with open(filename, 'w') as ff:
+        ff.write(inf_template.format(
+            filename[:-4],  # data filename without suffix
+            infdict.get('telescope', 'Other'),
+            infdict.get('instrument', 'Other'),
+            infdict.get('source_name', 'Object'),
+            infdict.get('src_raj', 0).to_string(sep=':'),
+            infdict.get('src_dej', 0).to_string(sep=':'),
+            infdict.get('tstart', 0.0),
+            1 if infdict.get('barycentric', False) else 0,
+            1,  # num bins in time series
+            infdict['nsamples'] * infdict['tsamp'],  # width of tseries bin
+            1 if infdict.get('orbit_removed', False) else 0,
+            dm,
+            infdict['fch1'],
+            infdict['foff'] * infdict['nchans'],   # total bandwidth
+            infdict['nchans'],
+            infdict['foff'],
+            'user'
+        ))
+
+
+
+def write_dat_inf_file(basename, data, dm, **infdict):
+    '''Writes a presto .dat and a .inf file with prefix basename.'''
+    # .dat file
+    datname = f"{basename}_DM{dm:.2f}.dat"
+    data.tofile(datname)
+    
+    # .inf file
+    write_inffile(basename, dm, **infdict)
+
+
 if __name__ == '__main__':
     import argparse
     from .cpu_fdmt import FDMT
@@ -22,8 +86,10 @@ if __name__ == '__main__':
     parser.add_argument(
         'outfile',
         type=str,
-        help='The file to be read written out, in  npz format,'
-        ' with shape (maxDT, nsamples_fdmt)'
+        help='The file to be read written out,'
+        ' with shape (maxDT, nsamples_fdmt). Its filetype is inferred from'
+        ' the file extension, except presto-style output has no'
+        ' extension.'
     )
 
     parser.add_argument(
@@ -74,6 +140,7 @@ if __name__ == '__main__':
     if args.band_edges is None:
         fch1 = fil.header['fch1']
         foff = fil.header['foff']
+        tsamp = fil.header['tsamp']
 
         if foff < 0:
             # this is the middle of the highest frequency band
@@ -89,7 +156,6 @@ if __name__ == '__main__':
             fmin, fmax = fmax, fmin
             data = data[:, ::-1]
 
-    if args.verbose:
         print('Initializing dedispersion between',
               fmin, 'and', fmax, 'MHz')
 
@@ -101,12 +167,23 @@ if __name__ == '__main__':
     out = fdmt.fdmt(data.T, retDMT=True, verbose=args.verbose,
                     padding=args.padding, frontpadding=args.front_padding)
 
-    outfiletype = args.outfile.rsplit('.', maxsplit=1)
-    if outfiletype = 'npy':
+    outfilename = args.outfile.rsplit('.', maxsplit=1)
+    if len(outfilename) == 1:
+        # Save .dat and .inf files like presto
+        DM_CONSTANT = 1.0 / 2.41e-4    # Need to know DM for filenames
+        dms = ((np.arange(0, fdmt.maxDT) /
+            DM_CONSTANT / (1/fdmt.fmin**2 - 1/fdmt.fmax**2)) * tsamp)
+        for i in range(args.maxdt):
+            dm = dms[i]
+            data = out[i]
+            basename = outfilename[0]
+            write_dat_inf_file(basename, data, dm, **fil.header)
+
+    elif outfilename[-1] == 'npy':
         np.save(args.outfile, out)
-    elif outfiletype = 'npz':
+    elif outfilename[-1] == 'npz':
         np.savez(args.outfile, out)
-    elif outfiletype = 'dat':
+    elif outfilename[-1] == 'dat':
         np.tofile(args.outfile, out)
     else:
         import sys
