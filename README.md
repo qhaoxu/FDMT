@@ -16,8 +16,8 @@ $ python -m fdmt.run infile.fil outfile.npy
 $ python -m fdmt.run --help
 ```
 The code can output raw binary `.dat` files, numpy `.npy` and `.npz` files,
-and [presto](https://github.com/scottransom/presto/)-style time series `.dat` and `.fil`
-file pairs. The output is recognized by the file extension, for instance:
+and [presto](https://github.com/scottransom/presto/)-style time series defined by 
+`.dat` and `.inf` file pairs. The output is recognized by the file extension, for instance:
 `python -m fdmt.run infile.fil outfile.npy` writes a numpy array of dedispersed time
 series to `outfile.npy`. When there is no file extension, then the output is
 (intended to be) in the same format as the output of presto's `prepsubband` output:
