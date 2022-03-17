@@ -2,7 +2,7 @@
 choice.'''
 
 
-def write_inffile(basename, dm, **infdict):
+def write_inffile(basename, dm, dmprec=2, **infdict):
     '''Writes a presto .inf file with prefix basename.'''
     inf_template = (
 """ Data file name without suffix          =  {}
@@ -28,7 +28,7 @@ def write_inffile(basename, dm, **infdict):
      fdmt
 """)
 
-    filename = f"{basename}_DM{dm:.2f}.inf"
+    filename = f"{basename}_DM{dm:.{dmprec}f}.inf"
     with open(filename, 'w') as ff:
         ff.write(inf_template.format(
             filename[:-4],  # data filename without suffix
@@ -52,14 +52,14 @@ def write_inffile(basename, dm, **infdict):
 
 
 
-def write_dat_inf_file(basename, data, dm, **infdict):
+def write_dat_inf_file(basename, data, dm, dmprec=2, **infdict):
     '''Writes a presto .dat and a .inf file with prefix basename.'''
     # .dat file
-    datname = f"{basename}_DM{dm:.2f}.dat"
+    datname = f"{basename}_DM{dm:.{dmprec}f}.dat"
     data.tofile(datname)
     
     # .inf file
-    write_inffile(basename, dm, **infdict)
+    write_inffile(basename, dm, dmprec, **infdict)
 
 
 if __name__ == '__main__':
