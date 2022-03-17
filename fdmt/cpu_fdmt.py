@@ -77,7 +77,7 @@ class FDMT:
         I: np.ndarray
             The array of spectra to be dedispersed. Must have shape (nchan, nsamp)
             where nchan is the number of frequency channels and nsamp is the number
-            of time samples.
+            of time samples. The 0th channel must be the lowest frequency channel.
         verbose: bool
             Whether to print info to stdout.
         padding: bool
