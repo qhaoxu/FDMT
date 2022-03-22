@@ -129,6 +129,15 @@ if __name__ == '__main__':
         help='Whether to return additional, incompletely integrated time'
         ' samples at the beginning of the dedispersed time series.'
     )
+    
+    parser.add_argument(
+        '--dm-precision', '-n',
+        type=int,
+        default=2,
+        help='When using presto-style dedispersion output, the precision'
+        ' of the DM quoted in the filenames of the .dat and .inf'
+        ' filenames. Unused when the output is in another format.'
+    )
 
     args = parser.parse_args()
 
@@ -177,7 +186,7 @@ if __name__ == '__main__':
             dm = dms[i]
             data = out[i]
             basename = outfilename[0]
-            write_dat_inf_file(basename, data, dm, **fil.header)
+            write_dat_inf_file(basename, data, dm, dmprec=args.dm_precision, **fil.header)
 
     elif outfilename[-1] == 'npy':
         np.save(args.outfile, out)
