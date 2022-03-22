@@ -2,10 +2,12 @@ This is a Python implementation of FDMT, an algorithm to dedisperse pulsar and F
 described by [Zackay \& Ofek (2017)](https://ui.adsabs.harvard.edu/abs/2017ApJ...835...11Z/abstract).
 
 # Installing
-To install the core package, use `pip install git+ssh://git@github.com/chime-sps/FDMT.git`.
+Clone the repository and checkout the desired branch if necessary.
+
+To install the core package, use `pip install path/to/FDMT`.
 
 If you plan on calling FDMT directly from the command line on filterbank-format .fil files, 
-use `pip install git+ssh://git@github.com/chime-sps/FDMT.git[cmdline]`.
+use `pip install path/to/FDMT[cmdline]`.
 
 # Using the code
 The core package is `import`ed like any other Python package.
