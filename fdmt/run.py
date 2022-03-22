@@ -142,7 +142,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     fil = blimpy.Waterfall(args.infile)
-    data = np.squeeze(fil.data)
+    data = np.squeeze(fil.data.astype(np.float32))
 
     nchans = fil.header.get('nchans', data.shape[1])
 
