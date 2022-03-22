@@ -160,7 +160,7 @@ if __name__ == '__main__':
             fmin = fch1 - 0.5 * foff   # fmin is smaller than fch1
             fmax = fmin + nchans * foff   # fmax is greater than fmin
     else:
-        fmin, fmax = band_edges
+        fmin, fmax = args.band_edges
         if fmin > fmax:
             fmin, fmax = fmax, fmin
             data = data[:, ::-1]
