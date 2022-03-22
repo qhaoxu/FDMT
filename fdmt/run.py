@@ -1,5 +1,8 @@
 '''Runs FDMT on filterbank data, yielding output in the format of the user's
 choice.'''
+from .cpu_fdmt import FDMT
+import numpy as np
+from astropy.coordinates import Angle
 
 
 def write_inffile(basename, dm, dmprec=2, **infdict):
@@ -35,8 +38,8 @@ def write_inffile(basename, dm, dmprec=2, **infdict):
             infdict.get('telescope', 'Other'),
             infdict.get('instrument', 'Other'),
             infdict.get('source_name', 'Object'),
-            infdict.get('src_raj', 0).to_string(sep=':'),
-            infdict.get('src_dej', 0).to_string(sep=':'),
+            infdict.get('src_raj', Angle('0h')).to_string(sep=':'),
+            infdict.get('src_dej', Angle('0d')).to_string(sep=':'),
             infdict.get('tstart', 0.0),
             1 if infdict.get('barycentric', False) else 0,
             1,  # num bins in time series
@@ -64,8 +67,6 @@ def write_dat_inf_file(basename, data, dm, dmprec=2, **infdict):
 
 if __name__ == '__main__':
     import argparse
-    from .cpu_fdmt import FDMT
-    import numpy as np
     
     try:
         import blimpy
