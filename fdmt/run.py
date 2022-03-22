@@ -5,7 +5,7 @@ import numpy as np
 from astropy.coordinates import Angle
 
 
-def write_inffile(basename, dm, dmprec=2, **infdict):
+def write_inffile(basename, dm, nsamples, dmprec=2, **infdict):
     '''Writes a presto .inf file with prefix basename.'''
     inf_template = (
 """ Data file name without suffix          =  {}
@@ -43,7 +43,7 @@ def write_inffile(basename, dm, dmprec=2, **infdict):
             infdict.get('tstart', 0.0),
             1 if infdict.get('barycentric', False) else 0,
             1,  # num bins in time series
-            infdict['nsamples'] * infdict['tsamp'],  # width of tseries bin
+            infdict.get('nsamples', nsamples) * infdict['tsamp'],  # width of tseries bin
             1 if infdict.get('orbit_removed', False) else 0,
             dm,
             infdict['fch1'],
@@ -55,14 +55,14 @@ def write_inffile(basename, dm, dmprec=2, **infdict):
 
 
 
-def write_dat_inf_file(basename, data, dm, dmprec=2, **infdict):
+def write_dat_inf_file(basename, data, dm, nsamples, dmprec=2, **infdict):
     '''Writes a presto .dat and a .inf file with prefix basename.'''
     # .dat file
     datname = f"{basename}_DM{dm:.{dmprec}f}.dat"
     data.tofile(datname)
     
     # .inf file
-    write_inffile(basename, dm, dmprec, **infdict)
+    write_inffile(basename, dm, nsamples, dmprec=dmprec, **infdict)
 
 
 if __name__ == '__main__':
@@ -187,7 +187,7 @@ if __name__ == '__main__':
             dm = dms[i]
             data = out[i]
             basename = outfilename[0]
-            write_dat_inf_file(basename, data, dm, dmprec=args.dm_precision, **fil.header)
+            write_dat_inf_file(basename, data, dm, data.size, dmprec=args.dm_precision, **fil.header)
 
     elif outfilename[-1] == 'npy':
         np.save(args.outfile, out)
