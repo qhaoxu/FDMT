@@ -42,8 +42,8 @@ def write_inffile(basename, dm, nsamples, dmprec=2, **infdict):
             infdict.get('src_dej', Angle('0d')).to_string(sep=':'),
             infdict.get('tstart', 0.0),
             1 if infdict.get('barycentric', False) else 0,
-            1,  # num bins in time series
-            infdict.get('nsamples', nsamples) * infdict['tsamp'],  # width of tseries bin
+            infdict.get('nsamples', nsamples),  # num bins in time series
+            infdict['tsamp'],  # width of tseries bin
             1 if infdict.get('orbit_removed', False) else 0,
             dm,
             infdict['fch1'],
@@ -166,6 +166,7 @@ if __name__ == '__main__':
             fmin, fmax = fmax, fmin
             data = data[:, ::-1]
 
+    if args.verbose:
         print('Initializing dedispersion between',
               fmin, 'and', fmax, 'MHz')
 
