@@ -1,11 +1,12 @@
 '''Runs FDMT on filterbank data, yielding output in the format of the user's
 choice.'''
+import sys
 from .cpu_fdmt import FDMT
 import numpy as np
 from astropy.coordinates import Angle
 
 
-def write_inffile(basename, dm, nsamples, dmprec=2, **infdict):
+def write_inffile(basename, dm, dmprec=2, **infdict):
     '''Writes a presto .inf file with prefix basename.'''
     inf_template = (
 """ Data file name without suffix          =  {}
@@ -42,7 +43,7 @@ def write_inffile(basename, dm, nsamples, dmprec=2, **infdict):
             infdict.get('src_dej', Angle('0d')).to_string(sep=':'),
             infdict.get('tstart', 0.0),
             1 if infdict.get('barycentric', False) else 0,
-            infdict.get('nsamples', nsamples),  # num bins in time series
+            infdict['nsamples'],  # num bins in time series
             infdict['tsamp'],  # width of tseries bin
             1 if infdict.get('orbit_removed', False) else 0,
             dm,
@@ -55,14 +56,21 @@ def write_inffile(basename, dm, nsamples, dmprec=2, **infdict):
 
 
 
-def write_dat_inf_file(basename, data, dm, nsamples, dmprec=2, **infdict):
+def write_dat_inf_file(basename, data, dm, dmprec=2, verbose=False, **infdict):
     '''Writes a presto .dat and a .inf file with prefix basename.'''
     # .dat file
     datname = f"{basename}_DM{dm:.{dmprec}f}.dat"
     data.tofile(datname)
     
+    if verbose and 'nsamples' in infdict and infdict['nsamples'] != data.size:
+        print(f'Warning: nsamples declared in header is'
+              f' {infdict["nsamples"]} but actual number of samples'
+              f' is {data.size}; using the latter', file=sys.stderr)
+
+    infdict['nsamples'] = data.size
+    
     # .inf file
-    write_inffile(basename, dm, nsamples, dmprec=dmprec, **infdict)
+    write_inffile(basename, dm, dmprec=dmprec, **infdict)
 
 
 if __name__ == '__main__':
@@ -188,7 +196,7 @@ if __name__ == '__main__':
             dm = dms[i]
             data = out[i]
             basename = outfilename[0]
-            write_dat_inf_file(basename, data, dm, data.size, dmprec=args.dm_precision, **fil.header)
+            write_dat_inf_file(basename, data, dm, dmprec=args.dm_precision, verbose=args.verbose,**fil.header)
 
     elif outfilename[-1] == 'npy':
         np.save(args.outfile, out)
@@ -197,8 +205,7 @@ if __name__ == '__main__':
     elif outfilename[-1] == 'dat':
         np.tofile(args.outfile, out)
     else:
-        import sys
         print('Warning: did not recognize output file type; saving as npz',
-              out=sys.err)
+              file=sys.err)
         np.savez(args.outfile + '.npz', out)
 
