@@ -44,7 +44,7 @@ class FDMT:
             dF = self.df
         loc = f**-2 - (f + dF) ** -2
         glo = self.fmin**-2 - self.fmax**-2
-        return np.ceil((self.maxDT - 1) * loc / glo).astype(int) + 1
+        return np.round(self.maxDT * loc / glo).astype(int)
 
 
     def buildAB(self, numCols, dtype=np.uint32):
