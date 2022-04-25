@@ -77,7 +77,7 @@ class FDMT:
         I: np.ndarray
             The array of spectra to be dedispersed. Must have shape (nchan, nsamp)
             where nchan is the number of frequency channels and nsamp is the number
-            of time samples.
+            of time samples. The 0th channel must be the lowest frequency channel.
         verbose: bool
             Whether to print info to stdout.
         padding: bool
@@ -183,6 +183,7 @@ class FDMT:
             # presto output. Nevertheless it may be worth adjusting this option
             # for a specific use case
             cor = self.df if i > 1 else 0
+
             C = (f1**-2 - f0**-2) / (f2**-2 - f0**-2)
             C01 = ((f1 - cor) ** -2 - f0**-2) / (f2**-2 - f0**-2)
             C12 = ((f1 + cor) ** -2 - f0**-2) / (f2**-2 - f0**-2)
