@@ -179,7 +179,11 @@ class FDMT:
             f0 = f_starts[i_F]
             f1 = f_mids[i_F]
             f2 = f_ends[i_F]
-            cor = cor = self.df if i > 1 else 0
+            # Using cor = df seems to give the best behaviour at high DMs, judging from
+            # presto output. Nevertheless it may be worth adjusting this option
+            # for a specific use case
+            cor = self.df if i > 1 else 0
+
             C = (f1**-2 - f0**-2) / (f2**-2 - f0**-2)
             C01 = ((f1 - cor) ** -2 - f0**-2) / (f2**-2 - f0**-2)
             C12 = ((f1 + cor) ** -2 - f0**-2) / (f2**-2 - f0**-2)
