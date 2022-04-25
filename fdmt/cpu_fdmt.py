@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
+from re import S
 import sys
+from multiprocessing import Pool
+from multiprocessing.shared_memory import SharedMemory
 import numpy as np
 from time import time
 from attr import attrs, attrib, cmp_using
@@ -170,7 +173,106 @@ class FDMT:
 
 
     def fdmt_iteration(self, src, dest, i):
-        T = src.shape[1]
+        # Copy Q, src, and dest to shared memory.
+        # Since we only need Q[i] and Q[i - 1], we only
+        # need to copy those to shared memory.
+        shm_Qi = SharedMemory(create=True, size=self.Q[i].nbytes)
+        shm_Qim1 = SharedMemory(create=True, size=self.Q[i-1].nbytes)
+        shm_src = SharedMemory(create=True, size=self.src.nbytes)
+        shm_dest = SharedMemory(create=True, size=self.dest.nbytes)
+
+        sharr_Qi = np.ndarray(self.Q.shape, buffer=shm_Qi.buf, dtype=self.Q[i].dtype)
+        sharr_Qim1 = np.ndarray(self.Q.shape, buffer=shm_Qim1.buf, dtype=self.Q[i-1].dtype)
+        sharr_src = np.ndarray(self.src.shape, buffer=shm_src.buf, dtype=src.dtype)
+        sharr_dest = np.ndarray(self.dest.shape, buffer=shm_dest.buf, dtype=dest.dtype)
+
+        sharr_Qi[:] = self.Q[i][:]
+        sharr_Qim1[:] = self.Q[i-1][:]
+        sharr_src[:] = src[:]
+        sharr_dest[:] = dest[:]
+
+        with Pool() as pool:
+            pool.starmap(
+                self._fdmt_iteration, 
+                self._fdmt_iteration_get_iterator(
+                    shm_src.name, shm_dest.name, shm_Qi.name, shm_Qim1.name, src.shape, self.Q[i].shape,
+                    src.dtype, i, self.dF
+                )
+            )
+
+        # Copy data from shared arrays back into main arrays and clean up.
+        # Since we only actually write to dest, we only need to copy that array.
+        dest[:] = sharr_dest[:]
+
+        shm_Qi.close()
+        shm_Qim1.close()
+        shm_src.close()
+        shm_dest.close()
+
+        shm_Qi.unlink()
+        shm_Qim1.unlink()
+        shm_src.unlink()
+        shm_dest.unlink()
+
+
+    def _fdmt_iteration(self,
+                        shm_src_name, shm_dest_name, shm_Qi_name, shm_Qim1_name,
+                        srcdest_shape, Qi_shape,
+                        dtype,
+                        i, i_F, T, dF, f0, f1, f2, cor):
+        shm_Qi = SharedMemory(name=shm_Qi_name, create=False)
+        shm_Qim1 = SharedMemory(name=shm_Qim1_name, create=False)
+        shm_src = SharedMemory(name=shm_src_name, create=False)
+        shm_dest = SharedMemory(name=shm_dest_name, create=False)
+
+        Qi = np.ndarray(Qi_shape, dtype=dtype,buffer=shm_Qi.buf)
+        Qim1 = np.ndarray(Qi_shape, dtype=dtype,buffer=shm_Qim1.buf)
+        src = np.ndarray(srcdest_shape, dtype=dtype,buffer=shm_src.buf)
+        dest = np.ndarray(srcdest_shape, dtype=dtype,buffer=shm_dest.buf)
+        
+        C = (f1**-2 - f0**-2) / (f2**-2 - f0**-2)
+        C01 = ((f1 - cor) ** -2 - f0**-2) / (f2**-2 - f0**-2)
+        C12 = ((f1 + cor) ** -2 - f0**-2) / (f2**-2 - f0**-2)
+        for i_dT in range(self.subDT(f0, dF)):
+            dT_mid01 = round(i_dT * C01)
+            dT_mid12 = round(i_dT * C12)
+            dT_rest = i_dT - dT_mid12
+            dest[Qi[i_F] + i_dT, :] = src[Qim1[2 * i_F] + dT_mid01, :]
+            dest[Qi[i_F] + i_dT, dT_mid12:] += src[
+                Qim1[2 * i_F + 1] + dT_rest, : T - dT_mid12
+            ]
+
+        shm_Qi.close()
+        shm_Qim1.close()
+        shm_src.close()
+        shm_dest.close()
+
+
+    def _fdmt_iteration_get_iterator(self,
+            shm_src_name, shm_dest_name, shm_Qi_name, shm_Qim1_name, 
+            srcdest_shape, Qi_shape, dtype, i, dF):
+        '''Returns the iterator that supplies the arguments to be passed by starmap
+        to _fdmt_iterator
+        
+        Parameters
+        ----------
+        shm_src_name: string
+            The name of the SharedMemory instance holding the shared src array. 
+        shm_dest_name: string
+            The name of the SharedMemory instance holding the shared dest array. 
+        shm_Qi_name: string
+            The name of the SharedMemory instance holding the shared array representing Q[i]. 
+        shm_Qim1_name: string
+            The name of the SharedMemory instance holding the shared array representarray representing Q[i - 1]. 
+        srcdest_shape: tuple of ints
+            The shape of src and dest.
+        Qi_shape: tuple of ints
+            The shape of Q[i] and Q[i - 1].
+        dtype: dtype
+            The dtype of src and dest.
+        '''
+
+        T = srcdest_shape[1]
         dF = self.df * 2**i
         f_starts = self.fs[:: 2**i]
         f_ends = f_starts + dF
@@ -184,17 +286,10 @@ class FDMT:
             # for a specific use case
             cor = self.df if i > 1 else 0
 
-            C = (f1**-2 - f0**-2) / (f2**-2 - f0**-2)
-            C01 = ((f1 - cor) ** -2 - f0**-2) / (f2**-2 - f0**-2)
-            C12 = ((f1 + cor) ** -2 - f0**-2) / (f2**-2 - f0**-2)
-            for i_dT in range(self.subDT(f0, dF)):
-                dT_mid01 = round(i_dT * C01)
-                dT_mid12 = round(i_dT * C12)
-                dT_rest = i_dT - dT_mid12
-                dest[self.Q[i][i_F] + i_dT, :] = src[self.Q[i - 1][2 * i_F] + dT_mid01, :]
-                dest[self.Q[i][i_F] + i_dT, dT_mid12:] += src[
-                    self.Q[i - 1][2 * i_F + 1] + dT_rest, : T - dT_mid12
-                ]
+            yield (self, shm_src_name, shm_dest_name, shm_Qi_name, shm_Qim1_name,
+                   srcdest_shape, Qi_shape, dtype, i, i_F, T, dF, f0, f1, f2, cor)
+
+
 
     def reset_ABQ(self):
         self.A = None
